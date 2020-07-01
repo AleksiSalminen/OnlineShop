@@ -1,0 +1,178 @@
+.header {
+  overflow: hidden;
+  background-color: #f1f1f1;
+  padding: 20px 10px;
+}
+
+.header a {
+  color: black;
+  text-transform: uppercase;
+  text-decoration: none;
+  letter-spacing: 0.15em;
+  display: inline-block;
+  padding: 10px 15px;
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.header a:after {
+  background: none repeat scroll 0 0 transparent;
+  bottom: 0;
+  content: "";
+  display: block;
+  height: 2px;
+  left: 50%;
+  position: absolute;
+  background:#9F2A21;
+  transition: width 0.3s ease 0s, left 0.3s ease 0s;
+  width: 0;
+}
+
+.header a.logo {
+  font-size: 25px;
+  font-weight: bold;
+}
+
+.header a:hover:after {
+  width: 100%; 
+  left: 0; 
+}
+
+.header a.active {
+  background-color: lightgrey;
+  box-shadow: 0px -5px;
+  color: white;
+}
+
+.header a.inactive {
+  background-color: lightgrey;
+  color: white;
+}
+
+.header-right {
+  float: right;
+}
+
+.main {
+  padding: 50px;
+  display: flex;
+}
+
+.content {
+  float: left;
+  flex: 50%;
+  padding: 10px;
+  border: solid 1px black;
+}
+
+.content form {
+  float: left;
+  padding: 90px;
+}
+.content input {
+  padding: 10px;
+}
+
+.main_content:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.left button {
+  color: rgb(0, 0, 0);
+}
+
+.left button:hover {
+  cursor:pointer;
+}
+
+#signup, #login, #loginform {
+  width:100%;
+  background:#a5a5a5;
+}
+
+#buttons {
+  height:100px;
+  background:#2c3e50;
+}
+
+#buttons > p {
+  width:49.95%;
+  float:left;
+  color:rgb(10, 10, 10);
+  text-align:center;
+  padding-top:25px;
+  height:75%;
+  margin:0;
+}
+
+#buttons > p:hover {
+  background:#f1c40f;
+  color:#2c3e50;
+  cursor:pointer;
+}
+
+#card:hover {
+  background:#e4e2e2;
+  color:#000000;
+  cursor:pointer;
+}
+
+.yellow {
+  background-color:gold;
+  outline:1px solid black;
+  box-shadow: 0px -5px;
+}
+
+.blue {
+  background-color:rgb(216, 204, 142);
+  outline:1px solid black;
+}
+  
+body {
+  width:100%;
+  height:700px;
+  margin:0;
+  padding:0;
+}
+
+#space > div {
+  width:500px;
+  margin:auto;
+  margin-top:10%;
+  font-family: 'Roboto', sans-serif;
+}
+
+#signup > input, #signup > button {
+  margin-top:20px;
+  margin-left:30%;
+  height:15px;
+  width:250px;
+  border:none;
+  border-radius:2px;
+}
+
+#login > input, #login > button { 
+  margin-top:20px;
+  margin-left:30%;
+  height:15px;
+  width:250px;
+  border:none;
+  border-radius:2px;
+}
+
+#login > button:hover, #signup > button:hover {
+  cursor: pointer;
+}
+
+.form_content {
+  padding-bottom: 20px;
+}
+
+.card-content {
+  border-style: double;
+  width:150px;
+  padding:5px 20px;
+}

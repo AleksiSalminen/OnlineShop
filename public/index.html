@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Sale</title>
+
+  <link rel="stylesheet" href="styles.css">
+
+  <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/redux@latest/dist/redux.min.js"></script>
+  <script src="https://unpkg.com/react-redux@latest/dist/react-redux.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/redux-thunk/2.2.0/redux-thunk.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="module">
+    import { store } from "./reducers/index.js";
+    import { fetchProduct, fetchProducts, fetchRejectProduct, fetchAcceptProduct, fetchAddProduct, fetchBuyProduct, fetchPendingProducts, fetchOwnPendingProducts, fetchOwnProductsOnSale } from "./services/productFetch.js";
+    import { fetchUsers, fetchUserLogin, fetchUserRegister, fetchUnregister, fetchUserUpdate, fetchUserDelete, fetchOwnInfo, fetchUpdateOwnInfo } from "./services/userFetch.js"
+
+    window.store = store;
+
+    // Product fetches
+    window.fetchProducts = fetchProducts;
+    window.fetchProduct = fetchProduct;
+    window.fetchRejectProduct = fetchRejectProduct;
+    window.fetchAcceptProduct = fetchAcceptProduct;
+    window.fetchAddProduct = fetchAddProduct;
+    window.fetchBuyProduct = fetchBuyProduct;
+    window.fetchOwnPendingProducts = fetchOwnPendingProducts;
+    window.fetchOwnProductsOnSale = fetchOwnProductsOnSale;
+    window.fetchPendingProducts = fetchPendingProducts;
+
+    // User fetches
+    window.fetchUsers = fetchUsers;
+    window.fetchUserLogin = fetchUserLogin;
+    window.fetchUserRegister = fetchUserRegister;
+    window.fetchUnregister = fetchUnregister;
+    window.fetchUserUpdate = fetchUserUpdate;
+    window.fetchUserDelete = fetchUserDelete;
+    window.fetchOwnInfo = fetchOwnInfo;
+    window.fetchUpdateOwnInfo = fetchUpdateOwnInfo;
+    
+  </script>
+
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+
+const { connect, Provider } = ReactRedux;
+
+const store = window.store;
+
+// Product fetches
+fetchProducts = window.fetchProducts;
+fetchProduct = window.fetchProduct;
+fetchRejectProduct = window.fetchRejectProduct;
+fetchAcceptProduct = window.fetchAcceptProduct;
+fetchAddProduct = window.fetchAddProduct;
+fetchBuyProduct = window.fetchBuyProduct;
+fetchOwnPendingProducts = window.fetchOwnPendingProducts;
+fetchOwnProductsOnSale = window.fetchOwnProductsOnSale;
+fetchPendingProducts = window.fetchPendingProducts;
+
+// User fetches
+fetchUsers = window.fetchUsers;
+fetchUserLogin = window.fetchUserLogin;
+fetchUserRegister = window.fetchUserRegister;
+fetchUnregister = window.fetchUnregister;
+fetchUserUpdate = window.fetchUserUpdate;
+fetchUserDelete = window.fetchUserDelete;
+fetchOwnInfo = window.fetchOwnInfo;
+fetchUpdateOwnInfo = window.fetchUpdateOwnInfo;
+
+
+/*
+* Main component for the app
+
+*/
+class Browser extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      signup:false,
+      login:true,
+      // Set which view to show
+      // 1=Home - 2=Account - 3=MyProducts - 4=Requests - 5=Users
+      showView:1
+    }
+    this.switch = this.switch.bind(this);
+  }
+
+  switch(word) {
+    var signup,login;
+    if (word == "signup"){
+      signup = true;
+      login = false;
+    }
+    else {
+      login = true;
+      signup = false;
+    }
+    this.setState({signup: signup, login: login})
+  };
+
+  componentDidMount() {
+
+  }
+
+  getFrontPage() {
+    this.setState({showView:1});
+  }
+
+  showAccount(state) {
+    this.setState({showView:2});
+
+    const ownInfoPromise = this.props.fetchOwnInfo(state.token);
+    ownInfoPromise.then((error) => {
+      if(!error) {
+        console.log("Successfully retrieved own information");
+      }
+    });
+  }
+
+  showMyProducts() {
+    this.setState({showView:3});
+  }
+
+  showRequests() {
+    this.setState({showView:4});
+
+    const pendingProductsPromise = this.props.fetchPendingProducts(this.props.token);
+    pendingProductsPromise.then((error) => {
+      if(!error) {
+        console.log("Successfully retrieved pending products");
+      }
+    });
+  }
+
+  showUsers() {
+    this.setState({showView:5});
+
+    const usersPromise = this.props.fetchUsers(this.props.token);
+    usersPromise.then((error) => {
+      if(!error) {
+        console.log("Successfully retrieved users");
+      }
+    });
+  }
+
+  getHomeHeader() {
+    if(this.state.showView === 1) {
+      return "active";
+    }
+    else {
+      return "inactive";
+    }
+  }
+
+  getHeaderClass(viewNmb) {
+    const view = this.state.showView;
+    if(viewNmb === view) {
+      return "yellow";
+    }
+    else {
+      return "blue";
+    }
+  }
+
+  checkHeaderButtons(self, state) {
+    if(state.token === null) {
+      return (
+        <div>
+          <a className="inactive" onClick={ () => {this.getFrontPage()} }>Home</a>
+          <a  id="signupButton" onClick={self.switch.bind(null, "signup")} className={self.state.signup ? "yellow":"blue"}>SIGN UP</a>
+          <a  id="loginButton" onClick={self.switch.bind(null, "login")} className={self.state.login ? "yellow":"blue"}>LOG IN</a>
+        </div>
+      );
+    }
+    else if (state.role === 'admin') {
+      return (
+        <div>
+          <a className={this.getHomeHeader()} onClick={ () => {this.getFrontPage()} }>Home</a>
+          <a className={this.getHeaderClass(5)} onClick={() => {this.showUsers()}}>USERS</a>
+          <a className={this.getHeaderClass(3)} onClick={() => this.showMyProducts()}>ADD PRODUCTS</a>
+          <a className={this.getHeaderClass(4)} onClick={ () => {this.showRequests()} }>REQUESTS</a>        
+          <a className="blue" href="">LOG OUT</a>
+
+        </div>
+      );
+    }
+    else if (state.role === 'shopkeeper') {
+      return (
+        <div>
+          <a className={this.getHomeHeader()} onClick={ () => {this.getFrontPage()} }>Home</a>
+          <a className={this.getHeaderClass(2)} onClick={() => this.showAccount(state)}>ACCOUNT</a>
+          <a className={this.getHeaderClass(4)} onClick={ () => {this.showRequests()} }>REQUESTS</a>
+          <a className={this.getHeaderClass(3)} onClick={() => this.showMyProducts()}>ADD PRODUCTS</a>
+          <a className="blue" href="">LOG OUT</a>
+        </div>
+      );
+    } else {
+      return (
+        <div>
+          <a className={this.getHomeHeader()} onClick={ () => {this.getFrontPage()} }>Home</a>
+          <a className={this.getHeaderClass(2)} onClick={() => this.showAccount(state)}>ACCOUNT</a>
+          <a className={this.getHeaderClass(3)} onClick={() => this.showMyProducts()}>ADD PRODUCTS</a>
+          <a className="blue" href="">LOG OUT</a>
+        </div>
+      );
+    }
+  }
+
+  checkAuthForm(self, state) {
+    if(state.token === null) {
+      return (
+        <div className="content right">
+          <div id="buttons">
+            <p id="signupButton" onClick={self.switch.bind(null, "signup")} className={self.state.signup ? "yellow":"blue"}>SIGN UP</p>
+            <p id="loginButton" onClick={self.switch.bind(null, "login")} className={self.state.login ? "yellow":"blue"}> LOG IN</p>
+          </div>
+
+          <div className="form">
+            <div className="form_content">
+              {self.state.signup?<Signup fetchUserRegister={this.props.fetchUserRegister} /> : null}
+              {self.state.login? <Login fetchUserLogin={this.props.fetchUserLogin} /> : null}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    else {
+      return (<div></div>);
+    }
+  }
+
+  checkSelected(self, state) {
+    return (
+      <div>
+        <Products token={this.props.token} products={this.props.products} product={this.props.product} fetchProduct={this.props.fetchProduct} fetchProducts={this.props.fetchProducts} fetchBuyProduct={this.props.fetchBuyProduct}/>
+      </div>
+    );
+  }
+
+  checkMainView(self, ownInfo, fetchUpdateOwnInfo, token) {
+    // 1=Home - 2=Account - 3=MyProducts - 4=Requests - 5=Users
+    const view = this.state.showView;
+    if(view === 2) {
+      return (
+        <div className="main">
+          <AccountView
+            ownInfo={ownInfo} 
+            fetchUpdateOwnInfo={fetchUpdateOwnInfo} 
+            fetchUnregister={this.props.fetchUnregister}
+            token={token}/>
+        </div>
+      );
+    }
+    else if(view === 3) {
+      return (
+        <div className="main">
+          <MyProducts 
+            token={this.props.token} 
+            fetchAddProduct={this.props.fetchAddProduct} 
+            fetchOwnPendingProducts={this.props.fetchOwnPendingProducts}
+            fetchOwnProductsOnSale = {this.props.fetchOwnProductsOnSale}
+            fetchAcceptProduct = {this.props.fetchAcceptProduct}
+            ownProductsOnSale = {this.props.ownProductsOnSale}
+            ownProducts={this.props.ownProducts}
+            role={this.props.role}
+            added={this.props.added}
+          />
+        </div>
+      );
+    }
+    else if(view === 4) {
+      return (
+        <div className="main">
+          <PendingProducts 
+            token={token} 
+            products={this.props.pending} 
+            fetchPendingProducts={this.props.fetchPendingProducts} 
+            fetchRejectProduct={this.props.fetchRejectProduct}
+            fetchAcceptProduct={this.props.fetchAcceptProduct} 
+            fetchProducts={this.props.fetchProducts}
+          />
+        </div>
+      );
+    }
+    else if(view === 5) {
+      return (
+        <div className="main">
+          <Users
+            token={token}
+            users={this.props.users}
+            fetchUsers = {this.props.fetchUsers}
+            fetchUserUpdate = {this.props.fetchUserUpdate}
+            fetchUserDelete = {this.props.fetchUserDelete}
+          />
+        </div>
+      );
+    }
+    else {
+      return (
+        <div className="main">
+          {self.checkSelected(self, self.props)}
+          {self.checkAuthForm(self, self.props)}
+        </div>
+      );
+    }
+  }
+
+  render() {
+    let self = this;
+    console.log(store.getState());
+    return(
+      <div>
+
+        <div className="header">
+          <a onClick={() => {this.getFrontPage()}} className="logo">SALE</a>
+
+          <div className="header-right">
+            {this.checkHeaderButtons(this, this.props)}
+          </div>
+        </div>
+
+        {this.checkMainView(this, this.props.ownInfo, this.props.fetchUpdateOwnInfo, this.props.token)}
+
+      </div>
+    );
+  }
+}
+
+
+/*
+*
+* User components
+*
+*/
+
+/*
+* User signup component
+*/
+class Signup extends React.Component{
+  constructor(props){
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+    this.nameRef = React.createRef();
+    this.emailRef = React.createRef();
+    this.passwordRef = React.createRef();
+    this.creditCardRef = React.createRef();
+    this.accountNumberRef = React.createRef();
+  }
+
+  handleClick() {
+    if (
+      this.creditCardRef.current.value.match(/^[0-9]{16}$/) 
+      && this.accountNumberRef.current.value.match(/^[A-Z]{2}[0-9]{16}$/) 
+      && this.emailRef.current.value.match(/^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/)
+      && this.passwordRef.current.value.match(/^[A-Za-z0-9]{10,}$/)
+      && this.nameRef.current.value !== ""
+    ) {
+      const user = {
+        name: this.nameRef.current.value,
+        email: this.emailRef.current.value,
+        password: this.passwordRef.current.value,
+        creditCard: this.creditCardRef.current.value,
+        accountNumber: this.accountNumberRef.current.value,
+      }
+
+      const registerPromise = this.props.fetchUserRegister(user);
+      registerPromise.then((error) => {
+        if(!error) {
+          console.log("User registered");
+        }
+      });
+    }
+    else {
+      alert("Check inputs: \nCredit card contains 16 numbers. \nBank account in IBAN form without spaces. \nPassword must contain 10 characters. \nName is required. \nEmail must be valid.");
+    }
+  }
+
+  render() {
+    return (
+      <div id="signup">
+        <input ref={this.nameRef} type="text" id="first" placeholder="Name" required />
+        <br/>
+        <input ref={this.emailRef} type="email" id="email" placeholder="Email" required/>
+        <br/>
+        <input ref={this.passwordRef} type="password" id="password" placeholder="Password" required/>
+        <br/>
+        <input type="password" id="confirm" placeholder="Confirm Password" required/>
+        <br/>
+        <input ref={this.creditCardRef} type="text" id="creditcard" placeholder="Credit Card" pattern="/^[0-9]{16}$/" required/>
+        <br/>
+        <input ref={this.accountNumberRef} type="text" id="accountNumber" placeholder="Bank Account Number" pattern="/^[A-Z]{2}[0-9]{16}$/" required/>
+        
+        <br />
+        <button id="send" className="left" onClick={this.handleClick.bind(this)}>Sign Up</button>
+        <br />
+      </div>
+    )
+  }
+}
+
+/*
+* User login component
+*/
+class Login extends React.Component{
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+    this.emailRef = React.createRef();
+    this.passwordRef = React.createRef();
+  }
+
+  handleClick() {
+    if (
+      this.emailRef.current.value.match(/^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/) 
+      && this.passwordRef.current.value !== ""
+    ) {
+      const user = {
+        email: this.emailRef.current.value,
+        password: this.passwordRef.current.value
+      }
+      
+      const loginPromise = this.props.fetchUserLogin(user);
+      loginPromise.then((error) => {
+        if(!error) {
+          console.log("User logged in");
+        }
+      });
+    } else {
+      alert("Check inputs: Password is required. \nEmail must be valid.");
+    }
+  }
+
+  render(){
+    return (
+      <div id="login">
+        <input ref={this.emailRef} type="email" id="email" placeholder="Email" required/>
+        <br/>
+        <input ref={this.passwordRef} type="password" id="password" placeholder="Password" required/>
+        <br/>
+        <button id="send" className="left" onClick={this.handleClick.bind(this)}>Login</button>
+      </div>
+    )
+  }
+}
+
+
+/*
+* Component for users view
+*/
+class Users extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+
+    this.state = {
+      user: null,
+      edit: false
+    };
+
+    this.nameRef = React.createRef();
+    this.roleRef = React.createRef();
+    this.emailRef = React.createRef();
+  }
+
+  handleClick() {
+    //console.log(this.props);
+  }
+
+  saveUser(id) {
+    if ((this.roleRef.current.value === "" || this.roleRef.current.value === "user" || this.roleRef.current.value === "admin" || this.roleRef.current.value === "shopkeeper")
+      && (this.emailRef.current.value === "" || this.emailRef.current.value.match(/^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/))
+    ) {
+      if(confirm("Save changes to user: " + this.state.user.name + "?")) {
+        const name = (this.nameRef.current.value === "" ? this.state.user.name : this.nameRef.current.value);
+        const role = (this.roleRef.current.value === "" ? this.state.user.role : this.roleRef.current.value);
+        const email = (this.emailRef.current.value === "" ? this.state.user.email : this.emailRef.current.value);
+        
+        const userUpdatePromise = this.props.fetchUserUpdate(id, name, role, email, this.props.token);
+        userUpdatePromise.then((error) => {
+          if(!error) {
+            console.log("Successfully updated user");
+            alert("Saved");
+            this.setState({ user: null });
+
+            const usersPromise = this.props.fetchUsers(this.props.token);
+            usersPromise.then((error) => {
+              if(!error) {
+                console.log("Updated user list");
+              }
+            });
+          }
+        });
+      }
+    } else {
+      alert("Check inputs: \nValid roles: admin, shopkeeper or user. \nEmail must be in valid form.")
+    }
+  }
+
+  deleteUser() {
+    if(confirm("Are you sure you want to delete user: " + this.state.user.name)) {
+      const id = this.state.user._id;
+      const userDeletePromise = this.props.fetchUserDelete(id, this.props.token);
+      userDeletePromise.then((error) => {
+        if(!error) {
+          console.log("Successfully deleted user: " + this.state.user.name);
+          alert("Deleted user: " + this.state.user.name);
+          this.setState({ user: null });
+
+          const usersPromise = this.props.fetchUsers(this.props.token);
+          usersPromise.then((error) => {
+            if(!error) {
+              console.log("Updated user list");
+            }
+          });
+        }
+      });
+    }
+  }
+
+  render() {
+    if(!this.state.user) {
+      return (
+        <div className="content left">
+          <p><b>USERS</b></p>
+          <div>
+          {
+            Object.values(this.props.users).map((user, index) => (
+              <div className="card-content" id="card" key={index} onClick={() => {this.setState({ user: user })}}>
+                <p>{user.name}</p>
+                <p><b>Role:&nbsp;</b>{user.role}</p>
+              </div>
+            ))
+          }
+          </div>
+        </div>
+      );
+    }
+    else if(this.state.edit) {
+      const user = this.state.user;
+      
+      return(
+        <div className="content left">
+          <p><b>EDIT USER</b></p>
+
+          <label htmlFor="name"><b>Name:&nbsp;</b></label>
+          <input ref={this.nameRef} type="text" id="name" placeholder={user.name}/>
+          <br/><br/>
+          <label htmlFor="role"><b>Role:&nbsp;</b></label>
+          <input ref={this.roleRef} type="text" id="role" placeholder={user.role}/>
+          <br/><br/>
+          <label htmlFor="email"><b>Email:&nbsp;</b></label>
+          <input ref={this.emailRef} type="text" id="email" placeholder={user.email}/>
+          <br/><br/>
+          <button onClick={() => {this.saveUser(user._id)}}>Save</button>
+          <br/><br/>
+          <button onClick={() => {this.setState({edit:false})}}>Back</button>
+        </div>
+      );
+    }
+    else {
+      const user = this.state.user;
+      
+      return(
+        <div className="content left">
+          <p><b>CHOSEN USER</b></p>
+          <p><b>Name:&nbsp;</b>{user.name}</p>
+          <p><b>Role:&nbsp;</b>{user.role}</p>
+          <p><b>Email:&nbsp;</b>{user.email}</p>
+          <button onClick={() => {this.setState({edit:true})}}>Edit</button>
+          <br/><br/>
+          <button onClick={() => {this.deleteUser()}}>Delete</button>
+          <br/><br/>
+          <button onClick={() => {this.setState({user:null})}}>Back</button>
+        </div>
+      );
+    }
+  }
+}
+
+
+/*
+* Component for account view
+*/
+class AccountView extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+    this.state = {
+      edit: false
+    };
+    this.nameRef = React.createRef();
+    this.emailRef = React.createRef();
+    this.passwordRef = React.createRef();
+    this.creditCardRef = React.createRef();
+    this.accountNumberRef = React.createRef();
+  }
+
+  handleClick() {
+    if(!this.state.edit) {
+      this.setState({ edit: true });
+    }
+    else {
+      this.setState({ edit: false });
+    }
+  }
+
+  unregister() {
+    if(confirm("Are you sure you want to unregister?")) {
+      const unregisterPromise = this.props.fetchUnregister(this.props.token);
+      unregisterPromise.then((error) => {
+        if(!error) {
+          console.log("Successfully unregistered");
+          alert("Unregistered");
+          window.location.replace("/");
+        }
+      });
+    }
+  }
+
+  updateInfo() {
+    if (
+      (this.emailRef.current.value.match(/^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/) || this.emailRef.current.value === "")
+      && (this.creditCardRef.current.value.match(/^[0-9]{16}$/) || this.creditCardRef.current.value === "")
+      && (this.accountNumberRef.current.value.match(/^[A-Z]{2}[0-9]{16}$/) || this.accountNumberRef.current.value === "")
+      && (this.passwordRef.current.value.match(/^[A-Za-z0-9]{10,}$/) || this.passwordRef.current.value === "")
+    ) {
+      const ownInfo = this.props.ownInfo;
+      
+      const name = (this.nameRef.current.value === "" ? ownInfo.name : this.nameRef.current.value);
+      const email = (this.emailRef.current.value === "" ? ownInfo.email : this.emailRef.current.value);
+      const creditCard = (this.creditCardRef.current.value === "" ? ownInfo.creditCard : this.creditCardRef.current.value);
+      const accountNumber = (this.accountNumberRef.current.value === "" ? ownInfo.accountNumber : this.accountNumberRef.current.value);
+      
+      let user = {};
+      
+      if (this.passwordRef.current.value === "") {
+        user = {
+          name: name,
+          email: email,
+          creditCard: creditCard,
+          accountNumber: accountNumber
+        };
+      } else {
+        user = {
+          name: name,
+          email: email,
+          password: this.passwordRef.current.value,
+          creditCard: creditCard,
+          accountNumber: accountNumber
+        };
+      }
+      
+      const ownInfoUpdatePromise = this.props.fetchUpdateOwnInfo(user, this.props.token);
+      ownInfoUpdatePromise.then((error) => {
+        if(!error) {
+          console.log("Own information successfully updated");
+          this.setState({ edit: false });
+        }
+      });
+    } else {
+      alert("Check inputs. Unless empty: \nCredit card contains 16 numbers. \nBank account in IBAN form without spaces. \nPassword must contain 10 characters. \nName is required. \nEmail must be valid.");
+    }
+  }
+
+  getAccountState() {
+    const ownInfo = this.props.ownInfo;
+    let self = this;
+
+    if(!this.state.edit) {
+      return (
+        <div id="account">
+          <p><b>ACCOUNT</b></p>
+
+          <p><b>Name:</b> {ownInfo.name}</p>
+          <p><b>Email:</b> {ownInfo.email}</p>
+          <p><b>Credit Card:</b> {ownInfo.creditCard}</p>
+          <p><b>Bank Account:</b> {ownInfo.accountNumber}</p>
+
+          <button onClick={this.handleClick}>Edit</button>
+          <br/><br/><br/>
+          <button onClick={() => {this.unregister()}}>Unregister</button>
+        </div>
+      );
+    }
+    else {
+      return (
+        <div id="accountEdit">
+          <p><b>EDIT ACCOUNT</b></p>
+
+          <label>
+            <b>Name:</b>&nbsp; <input ref={this.nameRef} type="text" placeholder={ownInfo.name}/>
+          </label><br/><br/>
+          <label>
+            <b>Email:</b>&nbsp; <input ref={this.emailRef} type="text" placeholder={ownInfo.email}/>
+          </label><br/><br/>
+          <label>
+            <b>Password:</b>&nbsp; <input ref={this.passwordRef} type="password"/>
+          </label><br/><br/>
+          <label>
+            <b>Credit Card:</b>&nbsp; <input ref={this.creditCardRef} type="text" placeholder={ownInfo.creditCard}/>
+          </label><br/><br/>
+          <label>
+            <b>Bank Account:</b>&nbsp; <input ref={this.accountNumberRef} type="text" placeholder={ownInfo.accountNumber}/>
+          </label><br/><br/>
+
+          <button onClick={this.handleClick}>Back</button>
+          <button onClick={this.updateInfo.bind(this)}>Save</button>
+        </div>
+      );
+    }
+  }
+
+  render(){
+    return (
+      <div>
+        {this.getAccountState()}
+      </div>
+    );
+  }
+}
+
+
+/*
+*
+* Components for products
+*
+*/
+
+/*
+* Component for single product
+*/
+class Product extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+  }
+
+  checkSelected(self, state) {
+    if(state.products === undefined) {
+      return (
+        <div className="card-content">
+        <p>{this.props.product.name}</p>
+        <p><b>Price: </b>{this.props.product.price}€</p> 
+        <button onClick={this.handleClick.bind(this)}>BACK TO ALL PRODUCTS</button>
+      </div>
+      );
+    }
+    else {
+      return (
+        <div className="card-content" onClick={this.handleClick.bind(this)}>
+        <p>{this.props.product.name}</p>
+        <p><b>Price: </b>{this.props.product.price}€</p>  
+        </div>
+      );
+    }
+  }
+  
+  handleClick() {
+
+    const productPromise = this.props.fetchProduct(this.props.id);
+    productPromise.then(() => {
+      console.log("Product successfully retrieved");
+    });
+    
+  }
+
+  render() {
+    if(this.props.product !== undefined) {
+      return (
+        <div className="card-content" id="card" onClick={this.handleClick.bind(this)}>
+          <p>{this.props.product.name}</p>
+          <p><b>Price: </b>{this.props.product.price}€</p>  
+        </div>
+      );
+    }
+    else {
+      return (
+        <div>
+          
+        </div>
+      );
+    }
+  }
+}
+
+
+/*
+* Component for all products
+*/
+class Products extends React.Component{
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+
+    const productsPromise = this.props.fetchProducts();
+    productsPromise.then(() => {
+      console.log("Products successfully retrieved");
+    });
+
+    this.state = {
+      product: false
+    };
+  }
+
+  handleClick() {
+    //console.log(this.props);
+  }
+
+  showProductView() {
+    this.setState({ product: !this.state.product });
+  }
+
+  buyProduct(name, id, token) {
+    if(confirm("Are you sure you want to buy product: " + name)) {
+      const buyProductPromise = this.props.fetchBuyProduct(id, token);
+      buyProductPromise.then((error) => {
+        const productsPromise = this.props.fetchProducts();
+        productsPromise.then(() => {
+          this.setState({ product: false });
+          if(!error) {
+            alert("You bought the product: " + name);
+          }
+        });
+      });
+    }
+  }
+
+  render(){
+    const products = this.props.products;
+    const prod = this.props.product;
+
+    if(!this.state.product) {
+      return (
+        <div className="content left">  
+          <p><b>PRODUCTS</b></p>
+          <div onClick={() => {this.showProductView()}}>
+          {
+            Object.values(products).map((product, index) => (
+            <Product 
+              products={products} 
+              product={product} 
+              id={Object.keys(products)[index]} 
+              key={index} 
+              fetchProduct={this.props.fetchProduct} 
+              fetchProducts={this.props.fetchProducts}
+            />
+            ))
+          }
+          </div>
+        </div>
+      );
+    }
+    else if(this.props.token === null || this.props.token === undefined) {
+      return (
+        <div className="content left">  
+          <p><b>SELECTED PRODUCT</b></p>
+          <Product fetchProduct={this.props.fetchProduct} product={this.props.product} />
+          <br/><br/><br/>
+          <button onClick={() => {this.showProductView()}}>Back</button>
+        </div>
+      );
+    }
+    else {
+      return (
+        <div className="content left">  
+          <p><b>SELECTED PRODUCT</b></p>
+          <Product fetchProduct={this.props.fetchProduct} product={this.props.product} />
+          <br/><br/><br/>
+          <button onClick={() => {this.showProductView()}}>Back</button>
+          <button onClick={() => {this.buyProduct(this.props.product.name, this.props.product.id, this.props.token)}}>BUY</button>
+        </div>
+      );
+    }
+  }
+}
+
+
+/*
+* Component for pending products
+*/
+class PendingProducts extends React.Component{
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+
+    this.state = {
+      product: null
+    };
+
+    this.sellingPriceRef = React.createRef();
+  }
+
+  handleClick() {
+    //console.log(this.props);
+  }
+
+
+  acceptRequest(name, id, token, sellingPrice) {
+    if (!isNaN(parseInt(sellingPrice))) {
+      if(confirm("Are you sure you want to accept product: " + name)) {
+        const acceptProductPromise = this.props.fetchAcceptProduct(id, token, sellingPrice);
+        acceptProductPromise.then((error) => {
+          if(!error) {
+              alert("You accepted the product: " + name);
+          }
+          const pendingProductsPromise = this.props.fetchPendingProducts(this.props.token);
+          pendingProductsPromise.then((error) => {
+            if(!error) {
+              console.log("Successfully retrieved pending products");
+            }
+          });
+          this.setState({ product: null });
+        });
+      }
+    } else {
+      alert("Selling price missing or in wrong format (numbers only)!")
+    }
+  }
+  
+
+  rejectRequest(name, id, token) {
+    if(confirm("Are you sure you want to reject product: " + name)) {
+      const rejectProductPromise = this.props.fetchRejectProduct(id, token);
+      rejectProductPromise.then((error) => {  
+        if(!error) {
+            alert("You rejected the product: " + name);
+        }
+        const pendingProductsPromise = this.props.fetchPendingProducts(this.props.token);
+        pendingProductsPromise.then((error) => {
+          if(!error) {
+            console.log("Successfully retrieved pending products");
+          }
+        });
+        this.setState({ product: null });
+      });
+    }
+  }
+
+  render() {
+    if(!this.state.product) {
+      return (
+        <div className="content left">
+          <p><b>PENDING PRODUCTS</b></p>
+          <div>
+          {
+            Object.values(this.props.products).map((product, index) => (
+              <div className="card-content" id="card" onClick={() => {this.setState({ product: product })}}>
+                <p>{product.name}</p>
+                <p><b>Price:&nbsp;</b>{product.price}€</p>
+              </div>
+            ))
+          }
+          </div>
+        </div>
+      );
+    }
+    else {
+      const product = this.state.product;
+      
+      return(
+        <div className="content left">
+          <p><b>CHOSEN PENDING PRODUCT</b></p>
+
+          <div>
+            <p><b>Name:&nbsp;</b>{product.name}</p>
+            <p><b>Price:&nbsp;</b>{product.price}€</p>
+            <p><b>Description:&nbsp;</b>{product.description}</p>
+            <label htmlFor="sellingPrice"><b>Set selling price:&nbsp;</b></label>
+            <input type="text" ref={this.sellingPriceRef} id="sellingPrice" placeholder="Selling price" required />
+            <br/>
+            <button onClick={() => { this.acceptRequest(product.name, product.id, this.props.token, this.sellingPriceRef.current.value) }}>Accept</button>
+            <br/><br/>
+            <button onClick={() => { this.rejectRequest(product.name, product.id, this.props.token) }}>Reject</button>
+            <br/><br/>
+            <button onClick={() => { this.setState({product: null}) }}>Back</button>
+          </div>
+        </div>
+      );
+    }
+  }
+}
+
+
+/*
+ * Component for my products view
+ *
+ */
+
+class MyProducts extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      add: false
+    };
+
+    const ownProductsPromise = this.props.fetchOwnPendingProducts(this.props.token);
+    ownProductsPromise.then(() => {
+      console.log("Own pending products successfully retrieved");
+    });
+
+    const ownProductsOnSalePromise = this.props.fetchOwnProductsOnSale(this.props.token);
+    ownProductsOnSalePromise.then(() => {
+      console.log("Own products on sale successfully retrieved");
+    });
+  }
+
+  showAddView() {
+    this.setState({add: true});
+  }
+
+  checkRole1() {
+    if(this.props.role === 'user') {
+      return (<p>OWN PENDING PRODUCTS:</p>)
+    }
+    else {
+      return;
+    }
+  }
+
+  checkRole2() {
+    if(this.props.role === 'shopkeeper' || this.props.role === 'admin') {
+      return (<p>PRODUCTS YOU HAVE PUT ON SALE:</p>)
+    }
+    else {
+      return;
+    }
+  }
+
+  render() {
+    const ownProducts = this.props.ownProducts;
+    const ownProductsOnSale = this.props.ownProductsOnSale;
+    
+    if (!this.state.add) {
+      return (
+        <div className="ownProducts">
+          <div>{this.checkRole1()}
+            <br/>
+            {
+              Object.values(ownProducts).map((product, index) => (
+                <div className="card-content" >
+                  <p>{product.name}</p>
+                  <p><b>Price:&nbsp;</b>{product.price}€</p>
+                </div>
+              ))
+            }
+            <br/>    
+          </div>
+          <div>{this.checkRole2()}
+            <br />
+            {
+              Object.values(ownProductsOnSale).map((product, index) => (
+                <div className="card-content" >
+                  <p>{product.name}</p>
+                  <p><b>Price:&nbsp;</b>{product.price}€</p>
+                </div>
+              ))
+            }
+            <br/>    
+          </div>    
+          <button onClick={() => { this.showAddView() }}>ADD NEW PRODUCT</button>
+              <br/><br/>
+        </div>
+      );
+    } else {
+      return (
+        <div>
+          <AddProductView 
+            token={this.props.token} 
+            fetchAddProduct={this.props.fetchAddProduct}
+            fetchOwnPendingProducts={this.props.fetchOwnPendingProducts}
+            fetchOwnProductsOnSale = {this.props.fetchOwnProductsOnSale}
+            fetchAcceptProduct = {this.props.fetchAcceptProduct}
+            ownProducts={this.props.ownProducts}
+            ownProductsOnSale={this.props.ownProductsOnSale}
+            role={this.props.role}
+            added={this.props.added}
+          />
+        </div>
+      );
+    }  
+  }
+}
+
+/*
+ * Component for add product view
+ */
+
+ class AddProductView extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      added: false
+    };
+    this.nameRef = React.createRef();
+    this.descriptionRef = React.createRef();
+    this.priceRef = React.createRef();
+  }
+
+  addProduct() {
+    if (!isNaN(parseInt(this.priceRef.current.value))&& this.nameRef.current.value !== "") {
+      
+      let product = {};
+      if (this.descriptionRef.current.value === "") {
+        product = {
+          name: this.nameRef.current.value,
+          price: (this.props.role === 'user' ? parseInt(this.priceRef.current.value) : 0)
+        };
+      } else {
+        product = {
+          name: this.nameRef.current.value,
+          description: this.descriptionRef.current.value,
+          price: (this.props.role === 'user' ? parseInt(this.priceRef.current.value) : 0)
+        };
+      }
+
+      console.log(product);
+      const addProductPromise = this.props.fetchAddProduct(product, this.props.token);
+      addProductPromise.then((error) => {
+        if(!error) {
+          console.log("Product successfully added");
+          
+        }
+        if (this.props.role === 'shopkeeper' || this.props.role === 'admin') {
+          const acceptProductPromise = this.props.fetchAcceptProduct(this.props.added.id, this.props.token, this.priceRef.current.value);
+          acceptProductPromise.then((error) => {
+            if(!error) {
+              console.log("Product accepted immediately")
+            }
+          })
+        }
+        this.setState({ added: true });
+        
+      });
+    } else {
+      alert("Check inputs: \nName required. \n Give price with numbers only");
+    }
+    
+    
+  }
+
+  getAddState() {
+
+    if(this.state.added) {
+      return (
+        <div>
+          <MyProducts 
+            token={this.props.token} 
+            fetchAddProduct={this.props.fetchAddProduct}
+            fetchOwnPendingProducts={this.props.fetchOwnPendingProducts}
+            fetchOwnProductsOnSale = {this.props.fetchOwnProductsOnSale}
+            fetchAcceptProduct = {this.props.fetchAcceptProduct}
+            ownProducts={this.props.ownProducts}
+            ownProductsOnSale={this.props.ownProductsOnSale}
+            role={this.props.role}
+            added={this.props.added}
+          />
+        </div>
+      );
+    }
+    else {
+      return (
+        <div id="add">
+          <p><b>ADD PRODUCT FOR SALE</b></p>
+
+          <label>
+            <b>Name:</b>&nbsp; <input ref={this.nameRef} type="text" />
+          </label><br/><br/>
+          <label>
+            <b>Description:</b>&nbsp; <input ref={this.descriptionRef} type="text" />
+          </label><br/><br/>
+          <label>
+            <b>Price:</b>&nbsp; <input ref={this.priceRef} type="text"/>
+          </label><br/><br/>
+
+          <button onClick={this.addProduct.bind(this)}>Add</button>
+        </div>
+      );
+    }
+  }
+
+  render(){
+    return (
+      <div>
+        {this.getAddState()}
+      </div>
+    );
+  }
+}
+
+
+
+/*
+*
+* Redux store mapping to React components
+*
+*/
+
+// Map Redux state to component props
+function mapStateToProps(state) {
+  return {
+    products: state.productList.products,
+    users: state.userList.users,
+    pending: state.pendingProducts.products,
+    product: state.selectedProduct.selected,
+    added: state.addedProduct.added,
+    token: state.authentication.token,
+    ownInfo: state.ownInformation,
+    ownProducts: state.ownProducts.products,
+    ownProductsOnSale: state.ownProductsOnSale.products,
+    role: state.authentication.role
+  };
+}
+
+// Map Redux actions to component props
+const mapDispatchToProps = {
+
+  // Product fetches
+  fetchProduct: (id) => fetchProduct(id),
+  fetchProducts: () => fetchProducts(),
+  fetchAcceptProduct: (id, token, sellingPrice) => fetchAcceptProduct(id, token, sellingPrice),
+  fetchRejectProduct: (id, token) => fetchRejectProduct(id, token),
+  fetchAddProduct: (product, token) => fetchAddProduct(product, token),
+  fetchBuyProduct: (id, token) => fetchBuyProduct(id, token),
+  fetchOwnPendingProducts: (token) => fetchOwnPendingProducts(token),
+  fetchOwnProductsOnSale: (token) => fetchOwnProductsOnSale(token),
+  fetchPendingProducts: (token) => fetchPendingProducts(token),
+
+
+  // User fetches
+  fetchUsers: (token) => fetchUsers(token),
+  fetchUserLogin: (user) => fetchUserLogin(user),
+  fetchUserRegister: (user) => fetchUserRegister(user),
+  fetchUnregister: (token) => fetchUnregister(token),
+  fetchUserUpdate: (id, name, role, email, token) => fetchUserUpdate(id, name, role, email, token),
+  fetchUserDelete: (id, token) => fetchUserDelete(id, token),
+  fetchOwnInfo: (token) => fetchOwnInfo(token),
+  fetchUpdateOwnInfo: (user, token) => fetchUpdateOwnInfo(user, token),
+  
+};
+
+// Connected Component
+const App = connect(mapStateToProps, mapDispatchToProps)(Browser);
+
+
+// Actual rendering here
+ReactDOM.render(
+  <Provider store={store}>
+    <App/>
+  </Provider>,
+  document.getElementById('root')
+);
+
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,18 @@
+{
+    "admin": {
+        "name": "ADMIN_NAME",
+        "email": "ADMIN_EMAIL",
+        "password": "ADMIN_PASS",
+        "creditCard": "ADMIN_CARD"
+    },
+
+    "product": {
+        "id": "",
+        "name": "",
+        "description": "",
+        "purchasePrice": "",
+        "sellingPrice": "",
+        "accepted": "",
+        "ownerID": ""
+    }
+}
