@@ -93,7 +93,7 @@ module.exports = async userConfig => {
   const user = await User.findOne({ role: 'user' }).exec();
 
   if (user) {
-    console.log('Regular user not created: Already exists in the database');
+    console.log('Regular user not created: Already exists in the database\n');
   }
   else {
     bcrypt.hash(process.env.USER_PASS, saltRounds, async function (error, hash) {

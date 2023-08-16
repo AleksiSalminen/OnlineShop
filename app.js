@@ -19,10 +19,10 @@ app.use(helmet());
 app.use(bodyParser.json());
 
 /* Connect to MongoDB */
-mongoose.connect('mongodb://localhost/WWWProgramming', { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false });
+mongoose.connect('mongodb://127.0.0.1:27017/OnlineShop', { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true });
 const db = mongoose.connection;
+db.on('connected', () => console.log('Connected to MongoDB\n'));
 db.on('error', console.error.bind(console, 'MongoDB connection error'));
-
 
 /* Delete users (if you want to) */
 
@@ -58,4 +58,4 @@ require('./setup/createproducts')().then(() => {});
 /* Set up routers */
 require('./router.js')(app);
 
-app.listen(port, () => console.log(`App listening on port ${port}\n`));
+app.listen(port, () => console.log(`\nApp listening on port ${port}\n`));
